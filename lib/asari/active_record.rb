@@ -178,9 +178,16 @@ class Asari
       #   communicating with the CloudSearch server.
       def asari_find(term, options = {})
         records = self.asari_instance.search(term, options)
-        ids = records.map { |id| id.to_i }
+        # ids = records.map { |id| id.to_i }
+        ids = records.map{|x| x[0].to_i}
 
         records.replace(Array(self.where("id in (?)", ids)))
+      end
+
+
+      def asari_suggest(term, suggester, options={})
+        records = self.asari_instance.search_suggestions(term, suggester, options)
+        suggestions = records["suggest"]["suggestions"].map{|x| x["suggestion"]}
       end
 
       # Public: method for handling errors from Asari document updates. By
@@ -195,4 +202,5 @@ class Asari
       end
     end
   end
+
 end

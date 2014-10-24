@@ -40,7 +40,7 @@ class Asari
   # CloudSearch API).
   #
   def api_version
-    @api_version || ENV['CLOUDSEARCH_API_VERSION'] || "2011-02-01" 
+    @api_version || ENV['CLOUDSEARCH_API_VERSION'] || "2013-01-01" 
   end
 
   # Public: returns the current aws_region, or the sensible default of
@@ -113,6 +113,50 @@ class Asari
 
     Asari::Collection.new(response, page_size)
   end
+
+
+
+
+
+
+
+
+  def search_suggestions(term, suggester, options = {})
+    return Asari::Collection.sandbox_fake if self.class.mode == :sandbox
+    return [] if term.blank?
+    term,options = "",term if term.is_a?(Hash) and options.empty?
+
+    url = "http://search-#{search_domain}.#{aws_region}.cloudsearch.amazonaws.com/#{api_version}/suggest"
+
+    if api_version == '2013-01-01'
+      url += "?q=#{CGI.escape(term.to_s)}&suggester=#{suggester}"
+    end
+
+    begin
+      response = HTTParty.get(url)
+    rescue Exception => e
+      ae = Asari::SearchException.new("#{e.class}: #{e.message} (#{url})")
+      ae.set_backtrace e.backtrace
+      raise ae
+    end
+
+    unless response.response.code == "200"
+      raise Asari::SearchException.new("#{response.response.code}: #{response.response.msg} (#{url})")
+    end
+
+    response.parsed_response
+    # Asari::Collection.new(response, 1000)
+  end
+
+
+
+
+
+
+
+
+
+
 
   # Public: Add an item to the index with the given ID.
   #
