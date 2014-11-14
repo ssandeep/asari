@@ -9,6 +9,9 @@ require "httparty"
 require "ostruct"
 require "json"
 require "cgi"
+require 'resque'
+require 'asari/jobs/asari_index'
+require 'asari/jobs/asari_index_remover'
 
 class Asari
   def self.mode
@@ -179,6 +182,11 @@ class Asari
     doc_request(query)
   end
 
+  def add_item_async(id, fields)
+    obj = Marshal.dump(self)
+    Resque.enqueue(AsariIndex, obj, id, fields)
+  end
+
   # Public: Update an item in the index based on its document ID.
   #   Note: As of right now, this is the same method call in CloudSearch
   #   that's utilized for adding items. This method is here to provide a
@@ -194,7 +202,7 @@ class Asari
   #   request to the server.
   #
   def update_item(id, fields)
-    add_item(id, fields)
+    add_item_async(id, fields)
   end
 
   # Public: Remove an item from the index based on its document ID.
@@ -216,6 +224,11 @@ class Asari
 
     query = remove_item_query id
     doc_request query
+  end
+
+  def remove_item_async(id)
+    obj = Marshal.dump(self)
+    Resque.enqueue(AsariIndexRemover, obj, id)
   end
 
   # Internal: helper method: common logic for queries against the doc endpoint.
