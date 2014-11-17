@@ -1,6 +1,8 @@
 require 'resque'
 require 'asari/jobs/asari_index'
 require 'asari/jobs/asari_index_remover'
+require 'logger'
+@@cloudsearch_logger = Logger.new('log/cloudsearch.log')
 
 class Asari
   # Public: This module should be included in any class inheriting from
@@ -202,7 +204,30 @@ class Asari
       # don't want the AR callbacks to halt execution.
       #
       def asari_on_error(exception, obj)
-        raise exception
+        action_name = caller[0][/`.*'/][1..-2]
+        @@cloudsearch_logger.error "\n[#{Time.now}] Error in indexing to cloudsearch: #{exception.message}\nBacktrace:#{exception.backtrace}\nThe objects are: #{obj.inspect}\nThe class is: #{name}\nThe calling method is: #{caller[0][/`.*'/][1..-2]}\n==========================="
+        if obj.is_a?(Array)
+          if obj.first.is_a?(self)
+            obj.each do |o|
+              AsariError.create(:model_name => name, :action => action_name, :object_id => o.id)
+            end
+          else
+            obj.each do |o|
+              AsariError.create(:model_name => name, :action => action_name, :object_id => o)
+            end
+          end
+        else
+          if obj.is_a?(self)
+            AsariError.create(:model_name => name, :action => action_name, :object_id => obj.id)
+          else
+            AsariError.create(:model_name => name, :action => action_name, :object_id => obj)
+          end
+        end
+        if ['development', 'staging', 'production'].include?(Rails.env)
+          ExceptionNotifier::Notifier.background_exception_notification(exception,
+              :data => {:model_name => name, :action => action_name, :objects => obj.inspect})
+        end
+        true
       end
     end
   end
