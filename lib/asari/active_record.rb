@@ -94,7 +94,7 @@ class Asari
         data = self.asari_data_item(obj)
         self.asari_instance.add_item(obj.send(:id), data)
       rescue Asari::DocumentUpdateException => e
-        self.asari_on_error(e)
+        self.asari_on_error(e, obj)
       end
 
       def asari_add_items(objects)
@@ -110,7 +110,7 @@ class Asari
         end      
         self.asari_instance.doc_request(amazon_items) if amazon_items.size > 0
       rescue Asari::DocumentUpdateException => e
-        self.asari_on_error(e)
+        self.asari_on_error(e, objects)
       end
 
       def asari_remove_items(ids)
@@ -120,7 +120,7 @@ class Asari
         end   
         self.asari_instance.doc_request(amazon_items)
       rescue Asari::DocumentUpdateException => e
-        self.asari_on_error(e)
+        self.asari_on_error(e, ids)
       end
 
       # Internal: method for updating a freshly edited item to the CloudSearch
@@ -135,7 +135,7 @@ class Asari
         data = self.asari_data_item(obj)
         self.asari_instance.update_item(obj.send(:id), data)
       rescue Asari::DocumentUpdateException => e
-        self.asari_on_error(e)
+        self.asari_on_error(e, obj)
       end
 
       # Gather all the data to send to the CloudSearch
@@ -154,7 +154,7 @@ class Asari
       def asari_remove_item(obj)
         self.asari_instance.remove_item(obj.send(:id))
       rescue Asari::DocumentUpdateException => e
-        self.asari_on_error(e)
+        self.asari_on_error(e, obj)
       end
 
       # Internal: method for looking at the when method/Proc (if defined) to
@@ -197,7 +197,7 @@ class Asari
       # handle the errors in a custom fashion. Be sure to return true if you
       # don't want the AR callbacks to halt execution.
       #
-      def asari_on_error(exception)
+      def asari_on_error(exception, obj)
         raise exception
       end
     end
