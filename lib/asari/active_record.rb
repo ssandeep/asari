@@ -1,3 +1,7 @@
+require 'resque'
+require 'asari/jobs/asari_index'
+require 'asari/jobs/asari_index_remover'
+
 class Asari
   # Public: This module should be included in any class inheriting from
   # ActiveRecord::Base that needs to be indexed. Every time this module is
@@ -92,7 +96,7 @@ class Asari
           return unless asari_should_index?(obj)
         end
         data = self.asari_data_item(obj)
-        self.asari_instance.add_item(obj.send(:id), data)
+        self.asari_instance.add_item_async(obj.send(:id), data)
       rescue Asari::DocumentUpdateException => e
         self.asari_on_error(e, obj)
       end
@@ -152,7 +156,7 @@ class Asari
       # Internal: method for removing a soon-to-be deleted item from the CloudSearch
       # index. Should probably only be called from asari_remove_from_index above.
       def asari_remove_item(obj)
-        self.asari_instance.remove_item(obj.send(:id))
+        self.asari_instance.remove_item_async(obj.send(:id))
       rescue Asari::DocumentUpdateException => e
         self.asari_on_error(e, obj)
       end
