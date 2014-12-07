@@ -185,7 +185,7 @@ class Asari
         # ids = records.map { |id| id.to_i }
         ids = records.map{|x| x[0].to_i}
 
-        records.replace(Array(self.where("id in (?)", ids)))
+        records.replace(Array(self.where("id in (?)", ids).order("field(id, #{ids.join(',')})")))
       end
 
 
