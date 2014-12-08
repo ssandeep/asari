@@ -184,8 +184,13 @@ class Asari
         records = self.asari_instance.search(term, options)
         # ids = records.map { |id| id.to_i }
         ids = records.map{|x| x[0].to_i}
+        if ids.present?
+          scope = self.where("id in (?)", ids)
+        else
+          scope = self.where("id in (?)", ids).order("field(id, #{ids.join(',')})")
+        end
 
-        records.replace(Array(self.where("id in (?)", ids).order("field(id, #{ids.join(',')})")))
+        records.replace(Array(scope))
       end
 
 
