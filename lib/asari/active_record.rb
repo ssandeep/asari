@@ -185,9 +185,9 @@ class Asari
         # ids = records.map { |id| id.to_i }
         ids = records.map{|x| x[0].to_i}
         if ids.present?
-          scope = self.where("id in (?)", ids)
-        else
           scope = self.where("id in (?)", ids).order("field(id, #{ids.join(',')})")
+        else
+          scope = self.where("id in (?)", ids)
         end
 
         records.replace(Array(scope))
